@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Фойдаланувчилар · Жамоа ҳисоботи{% endblock %}
+
+{% block filters %}{% endblock %}
+
+{% block body %}
+
+{% if parol %}
+<section class="block yangi-parol">
+  <h2>Янги парол — фақат ҳозир кўрсатилади</h2>
+  <p>Буни <b>{{ yangi }}</b> га беринг. Саҳифа янгилансa бошқа кўринмайди.</p>
+  <table>
+    <tbody>
+      <tr><td>Сайт</td><td class="mono"><b>{{ request.base_url }}</b></td></tr>
+      <tr><td>Логин</td><td class="mono"><b>{{ yangi }}</b></td></tr>
+      <tr><td>Парол</td><td class="mono"><b>{{ parol }}</b></td></tr>
+    </tbody>
+  </table>
+  <p class="dim sm">Парол сақланмайди — фақат унинг хеши сақланади.
+  Йўқотилса, шу саҳифадан «Янги парол» босинг.</p>
+</section>
+{% endif %}
+
+{% if xato %}
+<section class="block"><p class="err">{{ xato }}</p></section>
+{% endif %}
+
+<section class="block">
+  <h2>Янги фойдаланувчи</h2>
+  <form class="filters" method="post" action="/users/add">
+    <input type="text" name="login" placeholder="логин (masalan: sirojiddin)"
+           required autocapitalize="none" spellcheck="false">
+    <select name="member">
+      <option value="">— ҳисоботдаги исми (ихтиёрий) —</option>
+      {% for m in all_members %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+    </select>
+    <label class="chk"><input type="checkbox" name="admin" value="1"> бошқарувчи</label>
+    <button type="submit">Қўшиш</button>
+  </form>
+  <p class="dim sm">Парол автомат яратилади ва бир марта кўрсатилади.
+  «Бошқарувчи» — шу саҳифага кира олади, яъни одам қўша/ўчира олади.</p>
+</section>
+
+<section class="block">
+  <h2>Фойдаланувчилар <span class="badge">{{ rows|length }}</span></h2>
+  <table>
+    <thead>
+      <tr><th>Логин</th><th>Ҳисоботдаги исми</th><th>Роль</th>
+          <th>Яратилган</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="mono">{{ r.login }}{% if r.login == men %} <span class="chip sm">сиз</span>{% endif %}</td>
+        <td>{{ r.member or "—" }}</td>
+        <td>{% if r.admin %}<span class="chip">бошқарувчи</span>{% else %}<span class="dim">кўрувчи</span>{% endif %}</td>
+        <td class="dim">{{ r.created }}</td>
+        <td class="r nowrap">
+          <form method="post" action="/users/reset" class="inline">
+            <input type="hidden" name="login" value="{{ r.login }}">
+            <button type="submit">Янги парол</button>
+          </form>
+          {% if r.login != men %}
+          <form method="post" action="/users/delete" class="inline"
+                onsubmit="return confirm('{{ r.login }} ўчирилсинми?')">
+            <input type="hidden" name="login" value="{{ r.login }}">
+            <button type="submit" class="danger">Ўчириш</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="dim sm">Одам ўчирилса ёки пароли алмашса — унинг очиқ сессияси
+  дарҳол ёпилади. Охирги бошқарувчини ўчириб бўлмайди.</p>
+</section>
+
+{% endblock %}

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Жамоа ҳисоботи{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">Жамоа&nbsp;ҳисоботи</a>
+  <nav>
+    {% set keep = "?days=" ~ (days or 7) ~ ("&member=" ~ member|urlencode if member else "") ~ ("&project=" ~ project|urlencode if project else "") ~ ("&agent=" ~ agent|urlencode if agent else "") %}
+    <a href="/{{ keep }}" class="{{ 'on' if request.url.path == '/' else '' }}">Дашборд</a>
+    <a href="/sessions{{ keep }}" class="{{ 'on' if request.url.path == '/sessions' else '' }}">Сессиялар</a>
+    {% if men_admin %}
+      <a href="/projects" class="{{ 'on' if request.url.path == '/projects' else '' }}">Лойиҳалар</a>
+      <a href="/users" class="{{ 'on' if request.url.path == '/users' else '' }}">Фойдаланувчилар</a>
+    {% endif %}
+    <span class="quiet who">{{ men }}</span>
+    <a href="/logout">Чиқиш</a>
+  </nav>
+</header>
+
+<main>
+{% block filters %}
+<form class="filters" method="get" action="{{ request.url.path }}">
+  <div class="tabs">
+    {% for d, label in periods %}
+      <a class="tab {{ 'on' if d == days else '' }}"
+         href="{{ request.url.path }}?days={{ d }}{% if member %}&member={{ member|urlencode }}{% endif %}{% if project %}&project={{ project|urlencode }}{% endif %}{% if agent %}&agent={{ agent|urlencode }}{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <input type="hidden" name="days" value="{{ days }}">
+  <select name="agent" onchange="this.form.submit()">
+    {% for value, label in agents %}
+      <option value="{{ value }}" {{ 'selected' if value == agent else '' }}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="member" onchange="this.form.submit()">
+    <option value="">— ҳамма одам —</option>
+    {% for m in all_members %}
+      <option value="{{ m }}" {{ 'selected' if m == member else '' }}>{{ m }}</option>
+    {% endfor %}
+  </select>
+  <select name="project" onchange="this.form.submit()">
+    <option value="">— ҳамма лойиҳа —</option>
+    {% for p in all_projects %}
+      <option value="{{ p }}" {{ 'selected' if p == project else '' }}>{{ p }}</option>
+    {% endfor %}
+  </select>
+  {% block extra_filters %}{% endblock %}
+  <noscript><button type="submit">Кўрсат</button></noscript>
+  {% if member or project or agent %}
+    <a class="clear" href="{{ request.url.path }}?days={{ days }}">тозалаш</a>
+  {% endif %}
+</form>
+{% endblock %}
+
+{% block body %}{% endblock %}
+</main>
+
+<footer>
+  claude-note · жамоа ҳисоботи
+  {% if stats %}· базада {{ stats.n|num }} ёзув
+    {% if stats.first %}({{ stats.first }} — {{ stats.last }}){% endif %}{% endif %}
+</footer>
+</body>
+</html>

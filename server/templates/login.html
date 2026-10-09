@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кириш · Жамоа ҳисоботи</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-page">
+<form class="login" method="post" action="/login">
+  <h1>Жамоа ҳисоботи</h1>
+  <p class="dim">Claude сессиялари бўйича сарф ва фаолият</p>
+  <input type="hidden" name="next" value="{{ next }}">
+  <input type="text" name="login" placeholder="Логин" autofocus required
+         autocomplete="username" autocapitalize="none" spellcheck="false">
+  <input type="password" name="parol" placeholder="Парол" required
+         autocomplete="current-password">
+  <button type="submit">Кириш</button>
+  {% if xato %}<p class="err">Логин ёки парол нотўғри.</p>{% endif %}
+</form>
+</body>
+</html>

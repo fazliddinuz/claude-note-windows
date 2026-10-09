@@ -1,0 +1,58 @@
+# /etc/nginx/sites-available/claude-note-hisobot
+#
+# Serverda UFW faqat 22/80/443 ni ochadi, shuning uchun konteyner porti
+# tashqariga chiqarilmaydi - hamma narsa shu proksi orqali.
+#
+# O'rnatish:
+#   1) DNS: <субдомен> A -> <server IP manzili>
+#   2) shu faylni ko'chiring, SUBDOMAIN ni almashtiring
+#      (masalan your-server.example.com)
+#   3) ln -s /etc/nginx/sites-available/claude-note-hisobot /etc/nginx/sites-enabled/
+#   4) nginx -t && systemctl reload nginx
+#   5) certbot --nginx -d SUBDOMAIN     (webroot: /var/www/html)
+#
+# Har o'zgarishdan keyin boshqa saytlar ishlayotganini tekshiring:
+#   nginx -t && for h in example.com app.example.com; do
+#     echo -n "$h "; curl -s -o /dev/null -w '%{http_code}\n' "https://$h/"; done
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name SUBDOMAIN;
+
+    # certbot uchun
+    location /.well-known/acme-challenge/ { root /var/www/html; }
+
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name SUBDOMAIN;
+
+    # certbot shu ikki qatorni o'zi to'ldiradi
+    # ssl_certificate     /etc/letsencrypt/live/SUBDOMAIN/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/SUBDOMAIN/privkey.pem;
+
+    access_log /var/log/nginx/claude-note-hisobot.access.log;
+    error_log  /var/log/nginx/claude-note-hisobot.error.log;
+
+    # Hisobot ~700 bayt. Katta tana kutilmaydi - kelsa, bu xato yoki hujum.
+    client_max_body_size 256k;
+
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+
+    location / {
+        proxy_pass http://127.0.0.1:8095;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+}

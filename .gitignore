@@ -1,0 +1,35 @@
+# Bilim bazasi - GITGA TUSHMAYDI.
+# Ichida server IP lari, hostname lar, SSH kalit yo'llari, parol formatlari va
+# xom transkriptlar bor. Ular shaxsiy va lokal qolishi kerak.
+vault/
+
+# Ishchi holat: ishlangan sessiyalar, xarajat daftari, loglar, job fayllari
+state/
+
+# Zaxira nusxalar
+*.bak
+*.bak-*
+*.tmp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Server: baza, cookie kaliti va sirlar. Kod repoda, ma'lumot yo'q.
+server/data/
+server/data-dev/
+server/.env
+
+# Shaxsiy ish fayllari va loglar - ochiq repoga tushmaydi
+*.log
+*.log.*.gz
+*.bak*
+HANDOFF-*
+OLTIN-QOIDALAR.md

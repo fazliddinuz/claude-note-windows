@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Дашборд · Жамоа ҳисоботи{% endblock %}
+
+{% block body %}
+
+<section class="cards">
+  <div class="card big">
+    <span class="k">Иш нархи</span>
+    <span class="v">{{ totals.work_cost|money }}</span>
+    <span class="s">эслатмага ёзиш: {{ totals.note_cost|money }}</span>
+  </div>
+  <div class="card">
+    <span class="k">Сессия</span>
+    <span class="v">{{ totals.sessions|num }}</span>
+    <span class="s">{{ totals.requests|num }} сўров</span>
+  </div>
+  <div class="card">
+    <span class="k">Одам</span>
+    <span class="v">{{ totals.members|num }}</span>
+    <span class="s">{{ totals.projects|num }} лойиҳа</span>
+  </div>
+  <div class="card">
+    <span class="k">Давомийлик</span>
+    <span class="v">{{ totals.minutes|dur }}</span>
+    <span class="s">сессия бошидан охиригача</span>
+  </div>
+</section>
+
+{% if tarix and tarix.sessions %}
+<section class="block tarix">
+  <h2>Тарих <span class="badge">{{ since }} гача</span></h2>
+  <p class="dim sm">
+    Телеметрия {{ since }} да ишга туширилди. Ундан олдинги
+    <b>{{ tarix.sessions }}</b> та сессия бир неча ҳафта давомида йиғилган —
+    улар кунлик кўрсаткичларни бузмаслиги учун юқоридаги ҳисобга
+    <b>қўшилмайди</b>. Бошланғич қолдиқ сифатида шу ерда туради.
+  </p>
+  <div class="chips">
+    <span class="chip">Иш нархи <b>{{ tarix.work_cost|money }}</b></span>
+    <span class="chip">Сессия <b>{{ tarix.sessions|num }}</b></span>
+    <span class="chip">Сўров <b>{{ tarix.requests|num }}</b></span>
+    <span class="chip">Давомийлик <b>{{ tarix.minutes|dur }}</b></span>
+    <a class="chip" href="/sessions?days=0&tarix=1&member={{ member|urlencode }}&project={{ project|urlencode }}&agent={{ agent|urlencode }}">рўйхатини кўриш →</a>
+  </div>
+</section>
+{% endif %}
+
+{% if warns %}
+<section class="block">
+  <h2>Огоҳлантиришлар <span class="badge">{{ warns|length }}</span></h2>
+  <div class="chips">
+    {% for kind, label, n in warn_summary %}
+      <span class="chip lvl-{{ kind }}">{{ label }} · {{ n }}</span>
+    {% endfor %}
+  </div>
+  <table class="warns">
+    <thead><tr><th>Тур</th><th>Ким</th><th>Қачон</th><th>Нима</th><th>Сессия</th></tr></thead>
+    <tbody>
+    {% for w in warns %}
+      <tr class="lvl{{ w.level }}">
+        <td><span class="chip lvl-{{ w.kind }}">{{ labels[w.kind] }}</span></td>
+        <td class="nowrap">{{ w.member }}</td>
+        <td class="nowrap dim">{{ w.date }}</td>
+        <td>{{ w.text }}{% if w.project %} · <span class="dim">{{ w.project }}</span>{% endif %}</td>
+        <td class="ttl">{{ w.title }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <details class="advice">
+    <summary>Бу огоҳлантиришлар билан нима қилиш керак</summary>
+    <ul>
+      {% for kind, label, n in warn_summary %}
+        <li><b>{{ label }}</b> — {{ advice[kind] }}</li>
+      {% endfor %}
+    </ul>
+  </details>
+</section>
+{% else %}
+<section class="block empty">Бу давр учун огоҳлантириш йўқ.</section>
+{% endif %}
+
+<section class="two">
+  <div class="block">
+    <h2>Одамлар бўйича</h2>
+    {% if members %}
+    <table>
+      <thead><tr><th>Ким</th><th class="r">Иш нархи</th><th class="r">Сессия</th>
+                 <th class="r">Сўров</th><th class="r">Вақт</th></tr></thead>
+      <tbody>
+      {% for m in members %}
+        <tr>
+          <td><a href="/?days={{ days }}&member={{ m.k|urlencode }}{% if agent %}&agent={{ agent|urlencode }}{% endif %}">{{ m.k }}</a></td>
+          <td class="r strong">{{ m.work_cost|money }}</td>
+          <td class="r">{{ m.sessions }}</td>
+          <td class="r dim">{{ m.requests|num }}</td>
+          <td class="r dim">{{ m.minutes|dur }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="empty">Маълумот йўқ.</p>{% endif %}
+  </div>
+
+  <div class="block">
+    <h2>Лойиҳалар бўйича</h2>
+    {% if projects %}
+    <table>
+      <thead><tr><th>Лойиҳа</th><th class="r">Иш нархи</th><th class="r">Сессия</th>
+                 <th class="r">Банд</th></tr></thead>
+      <tbody>
+      {% for p in projects %}
+        <tr>
+          <td><a href="/?days={{ days }}&project={{ p.k|urlencode }}{% if agent %}&agent={{ agent|urlencode }}{% endif %}">{{ p.k }}</a>
+              {% if p.names and p.names > 1 %}<span class="chip sm" title="жамоада шунча турлича номланган">{{ p.names }} та ном</span>{% endif %}</td>
+          <td class="r strong">{{ p.work_cost|money }}</td>
+          <td class="r">{{ p.sessions }}</td>
+          <td class="r dim">{{ p.notes_added }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="empty">Маълумот йўқ.</p>{% endif %}
+    {% if men_admin %}
+      <p class="dim sm">Битта иш ҳар кимда ҳар хил номланганми?
+      <a href="/projects">номларни бирлаштириш →</a></p>
+    {% endif %}
+  </div>
+</section>
+
+{% if daily %}
+<section class="block">
+  <h2>Кунлар бўйича</h2>
+  <div class="bars">
+    {% for d in daily %}
+      <div class="bar" title="{{ d.k }} · {{ d.work_cost|money }} · {{ d.sessions }} сессия">
+        <div class="fill" style="height:{{ d.bar }}%"></div>
+        <span class="lbl">{{ d.k[5:] }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if models %}
+<section class="block">
+  <h2>Нарх қаердан чиқди</h2>
+  {% if model_covered < model_total %}
+    <p class="dim sm">Тақсимот {{ model_total }} сессиядан {{ model_covered }} таси
+    учун мавжуд — қолганлари бу имконият қўшилгунга қадар ёзилган.</p>
+  {% endif %}
+  <table>
+    <thead><tr><th>Модель</th><th class="r">Модель чақируви</th><th class="r">Кириш</th>
+      <th class="r">Чиқиш</th><th class="r">Кэш ёзиш</th>
+      <th class="r">Кэш ўқиш</th><th class="r">Нарх</th></tr></thead>
+    <tbody>
+    {% for m in models %}
+      <tr>
+        <td class="mono">{{ m.model }}</td>
+        <td class="r dim">{{ m.requests|num }}</td>
+        <td class="r dim">{{ m["in"]|num }}</td>
+        <td class="r dim">{{ m.out|num }}</td>
+        <td class="r dim">{{ m.cache_write|num }}</td>
+        <td class="r hot">{{ m.cr|num }}</td>
+        <td class="r strong">{{ m.cost_usd|money }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="dim sm">Кэш ўқиш одатда энг катта улуш — сессия узайган сари контекст
+  ҳар бир model/tool давомида қайта ўқилади. Шунинг учун бу рақам янги, ноёб
+  матн ҳажми эмас, қайта ўқилган контекстлар йиғиндиси. Нархни туширишнинг
+  энг самарали йўли — сессияни қисқа тутиш (<code>/clear</code>).</p>
+</section>
+{% endif %}
+
+{% if tools %}
+<section class="block">
+  <h2>Пул қайси ишга кетди</h2>
+  <table>
+    <thead><tr><th>Восита / скилл</th><th class="r">Чақирув</th>
+               <th class="r">Тахминий нарх</th></tr></thead>
+    <tbody>
+    {% for t in tools %}
+      <tr>
+        <td class="mono">{{ t.name }}</td>
+        <td class="r dim">{{ t.count|num }}</td>
+        <td class="r strong">{{ t.cost|money }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="dim sm">Тахминий: битта сўровнинг нархи ўша сўровда чақирилган
+  воситалар орасида тенг бўлинади. Аниқ бўлиши мумкин эмас — пулни контекст
+  ейди, восита эмас.</p>
+</section>
+{% endif %}
+
+{% endblock %}

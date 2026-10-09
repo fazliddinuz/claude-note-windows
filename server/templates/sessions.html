@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Сессиялар · Жамоа ҳисоботи{% endblock %}
+
+{% block extra_filters %}
+  <input type="search" name="q" value="{{ q }}" placeholder="сарлавҳа ёки ID бўйича…">
+  <button type="submit">Қидир</button>
+{% endblock %}
+
+{% block body %}
+<section class="block">
+  <h2>Сессиялар <span class="badge">{{ total|num }}</span>
+    {% if since %}
+      {% if tarix_ham %}
+        <a class="chip" href="?days={{ days }}&member={{ member|urlencode }}&project={{ project|urlencode }}&agent={{ agent|urlencode }}&q={{ q|urlencode }}">фақат {{ since }} дан кейингиси</a>
+      {% else %}
+        <a class="chip" href="?days=0&tarix=1&member={{ member|urlencode }}&project={{ project|urlencode }}&agent={{ agent|urlencode }}&q={{ q|urlencode }}">тарих билан</a>
+      {% endif %}
+    {% endif %}
+  </h2>
+
+  {% if rows %}
+  <table class="sessions">
+    <thead>
+      <tr>
+        <th>Agent</th>
+        <th>Сана ва вақт</th><th>Ким</th><th>Лойиҳа</th><th>Сессия</th>
+        <th class="r">Иш нархи</th><th class="r">Сўров</th>
+        <th class="r">Контекст</th><th class="r">Давомийлик</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="nowrap"><span class="chip agent-{{ r.agent }}">{{ "Codex" if r.agent == "codex" else "Claude Code" }}</span></td>
+        <td class="nowrap">
+          {{ r|when }}
+          {% if r|multiday %}<span class="chip warn" title="Сессия бир кундан узоқ чўзилган — контекст ҳар сўровда қайта ўқилади">узун</span>{% endif %}
+        </td>
+        <td class="nowrap">{{ r.member }}</td>
+        <td class="nowrap">{{ r.project_canon or r.project }}{% if r.project_canon and r.project_canon != r.project %}
+          <span class="dim sm" title="шу компьютердаги папка номи">({{ r.project }})</span>{% endif %}</td>
+        <td>
+          <details>
+            <summary class="ttl">{{ r.title or "(сарлавҳасиз)" }}</summary>
+            <div class="detail">
+              {% if r.summary %}<p>{{ r.summary }}</p>{% endif %}
+              <p class="dim mono">
+                ID {{ r.session[:8] }} · {{ r.host }} / {{ r.os_user }}
+                · {{ r.models_list|join(", ") }}
+                · қатор {{ r.line_start }}–{{ r.line_end }}
+                · {{ r.event }}
+                · эслатмага {{ r.notes_added }} банд ({{ r.note_cost_usd|money }})
+              </p>
+              {% if r.usage_rows %}
+              <table class="mini">
+                <thead><tr><th>Модель</th><th class="r">Модель чақируви</th>
+                  <th class="r">Кириш</th><th class="r">Чиқиш</th>
+                  <th class="r">Кэш ёзиш</th><th class="r">Кэш ўқиш</th>
+                  <th class="r">Нарх</th></tr></thead>
+                <tbody>
+                {% for m in r.usage_rows %}
+                  <tr>
+                    <td class="mono">{{ m.model }}</td>
+                    <td class="r dim">{{ m.requests|num }}</td>
+                    <td class="r dim">{{ m["in"]|num }}</td>
+                    <td class="r dim">{{ m.out|num }}</td>
+                    <td class="r dim">{{ m.cache_write|num }}</td>
+                    <td class="r hot">{{ m.cr|num }}</td>
+                    <td class="r strong">{{ m.cost_usd|money }}</td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+              {% endif %}
+
+              {% if r.tool_cost_rows %}
+              <p class="chips">
+                {% for name, usd in r.tool_cost_rows %}
+                  <span class="chip sm">{{ name }}
+                    <b>{{ r.tools_dict.get(name, 0)|num }}</b>
+                    · {{ usd|money }}</span>
+                {% endfor %}
+              </p>
+              {% elif r.tools_dict %}
+              <p class="chips">
+                {% for name, n in r.tools_dict.items() %}
+                  <span class="chip sm">{{ name }} <b>{{ n }}</b></span>
+                {% endfor %}
+              </p>
+              {% endif %}
+            </div>
+          </details>
+        </td>
+        <td class="r strong">{{ r.work_cost_usd|money }}</td>
+        <td class="r dim">{{ r.requests|num }}</td>
+        <td class="r {{ 'hot' if r.avg_context >= 150000 else 'dim' }}">{{ r.avg_context|ctx }}</td>
+        <td class="r dim">{{ r.duration_min|dur }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if pages > 1 %}
+  <nav class="pager">
+    {% for p in range(1, pages + 1) %}
+      {% if p == page %}<span class="on">{{ p }}</span>
+      {% else %}<a href="?days={{ days }}&member={{ member|urlencode }}&project={{ project|urlencode }}&agent={{ agent|urlencode }}&q={{ q|urlencode }}&page={{ p }}">{{ p }}</a>{% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <p class="empty">Ҳеч нарса топилмади.</p>
+  {% endif %}
+</section>
+{% endblock %}

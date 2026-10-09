@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Лойиҳалар · Жамоа ҳисоботи{% endblock %}
+
+{% block filters %}{% endblock %}
+
+{% block body %}
+
+{% if xabar %}
+<section class="block"><p class="ok">{{ xabar }}</p></section>
+{% endif %}
+{% if xato %}
+<section class="block"><p class="err">{{ xato }}</p></section>
+{% endif %}
+
+<section class="block">
+  <h2>Бир ишнинг бир нечта номи</h2>
+  <p class="dim sm">
+    Лойиҳа номи ҳар кимнинг компьютеридаги <b>папка номидан</b> олинади.
+    Шунинг учун битта иш сизда <span class="mono">demoproject</span>,
+    шеригингизда <span class="mono">DemoProj</span> бўлиб келади ва ҳисоботда
+    иккита алоҳида лойиҳа кўринади. Бу ерда уларни <b>қўлда</b> битта ном
+    остига қўясиз — шундан кейин дашборд, сессиялар рўйхати ва
+    огоҳлантиришлар битта ном билан ишлайди.
+  </p>
+  <p class="dim sm">
+    <b>Автомат бирлаштириш йўқ:</b> бирлаштирилмаган ҳар бир ном ўз номи
+    билан алоҳида туради. Бу атайин — ўхшаш номли иккита бошқа лойиҳа
+    жимгина қўшилиб кетмаслиги учун. Ҳеч қандай ёзув ўчмайди: хом ном
+    жойида қолади, фақат ҳисоб бошқа ном остида юритилади. «Ажратиш»
+    исталган пайтда орқага қайтаради.
+  </p>
+  <p class="dim sm">
+    <b>Рўйхатга олиш</b> — «бу бизнинг лойиҳа» дегани: шундан кейин у
+    «Бегона лойиҳа» бўлиб огоҳлантирмайди. Лойиҳа фақат бир кишида бўлса
+    ҳам рўйхатга олса бўлади, бирлаштириш шарт эмас.
+    {% if env_known %}<br>Созламадаги бошланғич рўйхат:
+      {% for p in env_known %}<span class="mono">{{ p }}</span>{% if not loop.last %}, {% endif %}{% endfor %}.
+    {% endif %}
+  </p>
+</section>
+
+{% if suggestions %}
+<section class="block">
+  <h2>Шулар битта лойиҳами? <span class="badge">{{ suggestions|length }}</span></h2>
+  <p class="dim sm">Номлари жуда ўхшаш — лекин қарорни сиз қабул қиласиз.
+  Номни ўзгартириб ҳам юборсангиз бўлади.</p>
+  {% for s in suggestions %}
+    <form method="post" action="/projects/merge" class="filters taklif">
+      {% for r in s.rows %}<input type="hidden" name="raw" value="{{ r.raw }}">{% endfor %}
+      <span class="chips">
+        {% for r in s.rows %}
+          <span class="chip"><span class="mono">{{ r.raw }}</span>
+            <b>{{ r.work_cost|money }}</b>
+            <span class="dim">· {{ r.members|join(", ") or "ёзувсиз" }}</span></span>
+        {% endfor %}
+      </span>
+      <input type="text" name="canon_new" value="{{ s.suggest }}" maxlength="80"
+             size="24" autocapitalize="none" spellcheck="false"
+             aria-label="умумий ном">
+      <button type="submit">Битта ном қилиш</button>
+    </form>
+  {% endfor %}
+</section>
+{% endif %}
+
+<form method="post" action="/projects/merge">
+<section class="block">
+  <h2>Ҳамма номлар <span class="badge">{{ groups|length }}</span></h2>
+  {% if groups %}
+  <table>
+    <thead>
+      <tr><th></th><th>Ном</th><th>Кимда</th><th class="r">Сессия</th>
+          <th class="r">Иш нархи</th><th>Ҳолат</th></tr>
+    </thead>
+    <tbody>
+    {% for g in groups %}
+      {% if g.names > 1 or g.rows[0].merged %}
+        <tr class="grp">
+          <td></td>
+          <td><b>{{ g.canon }}</b>
+              <span class="chip sm">{{ g.names }} та ном</span></td>
+          <td class="dim">{{ g.members|join(", ") }}</td>
+          <td class="r">{{ g.sessions }}</td>
+          <td class="r strong">{{ g.work_cost|money }}</td>
+          <td>{% if g.known %}<span class="chip">рўйхатда</span>
+              {% else %}<span class="chip lvl-begona_loyiha">рўйхатда йўқ</span>{% endif %}</td>
+        </tr>
+        {% for r in g.rows %}
+          <tr class="sub">
+            <td><input type="checkbox" name="raw" value="{{ r.raw }}"></td>
+            <td class="mono">↳ {{ r.raw }}</td>
+            <td class="dim">{{ r.members|join(", ") or "—" }}</td>
+            <td class="r dim">{{ r.sessions }}</td>
+            <td class="r dim">{{ r.work_cost|money }}</td>
+            <td class="dim sm nowrap">{{ r.first_day }}{% if r.last_day and r.last_day != r.first_day %} — {{ r.last_day }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        {% set r = g.rows[0] %}
+        <tr>
+          <td><input type="checkbox" name="raw" value="{{ r.raw }}"></td>
+          <td class="mono">{{ r.raw }}</td>
+          <td class="dim">{{ r.members|join(", ") or "—" }}</td>
+          <td class="r">{{ r.sessions }}</td>
+          <td class="r strong">{{ r.work_cost|money }}</td>
+          <td>{% if g.known %}<span class="chip">рўйхатда</span>
+              {% else %}<span class="chip lvl-begona_loyiha">рўйхатда йўқ</span>{% endif %}</td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="filters amal">
+    <span class="dim sm">Белгиланганларни:</span>
+    <input type="text" name="canon_new" list="canons" maxlength="80" size="24"
+           placeholder="умумий ном" autocapitalize="none" spellcheck="false"
+           aria-label="умумий ном">
+    <datalist id="canons">
+      {% for g in groups %}<option value="{{ g.canon }}">{% endfor %}
+    </datalist>
+    <button type="submit">Бирлаштириш</button>
+    <button type="submit" formaction="/projects/register">Рўйхатга қўшиш</button>
+    <button type="submit" formaction="/projects/split" class="danger">Ажратиш</button>
+  </div>
+  <p class="dim sm">
+    <b>Бирлаштириш</b> — белгиланган номларни ёзилган умумий ном остига қўяди
+    (битта номни белгилаб янги ном ёзсангиз — қайта номлаш бўлади).
+    <b>Рўйхатга қўшиш</b> — номини ўзгартирмай «бизники» деб белгилайди.
+    <b>Ажратиш</b> — бирлаштиришни бекор қилади ва рўйхатдан чиқаради.
+  </p>
+  {% else %}
+  <p class="empty">Ҳали бирорта лойиҳа ёзуви йўқ.</p>
+  {% endif %}
+</section>
+</form>
+
+{% endblock %}

@@ -1,0 +1,18 @@
+services:
+  hisobot:
+    build: .
+    image: claude-note-hisobot
+    container_name: claude-note-hisobot
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+    # UFW da faqat 22/80/443 ochiq - port tashqariga chiqarilmaydi,
+    # sayt nginx orqali proksi qilinadi.
+    ports:
+      - "127.0.0.1:${HOST_PORT:-8095}:8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
